@@ -8,7 +8,7 @@
 *             Globals	           *
 ***********************************/
 
-ofstream outputWriter;			//The writer for the output file
+ofstream outputWriter;				//The writer for the output file
 
 
 /***********************************
@@ -65,7 +65,6 @@ int Scheduler::Get_CurrNumOfPkts()
 {
 	return _currNumOfPkts;
 }
-
 long int Scheduler::GetSchTime()
 {
 	return _schTime;
@@ -95,6 +94,16 @@ void Scheduler::SetStartOver(bool value)
 	_startOver = value;
 }
 
+void Scheduler::SetLastPacket(Packet pkt)
+{
+	_lastPacket = pkt;
+}
+
+void Scheduler::SetLastTimePacket(int lastTime)
+{
+	_lastTimePacket = lastTime;
+}
+
 //General
 bool Scheduler::IsFlowInMap(string key)
 {
@@ -121,12 +130,9 @@ void Scheduler::AddPacketToMap(string key, Packet pkt)
 	int pktTime = pkt.packet_GetTime();
 	int credit = GetQuantum() * pkt.packet_GetWeight();
 
-	if (pktTime >= GetSchTime())
+	if (pktTime > GetSchTime())
 	{
 		SetSchTime(pktTime);
-	}
-	else
-	{
 		SetStartOver(true);
 	}
 
@@ -157,16 +163,6 @@ void Scheduler::AddLastPacket()
 	AddPacketToMap(packetKey, lastPacket);
 }
 
-void Scheduler::SetLastPacket(Packet pkt)
-{
-	_lastPacket = pkt;
-}
-
-void Scheduler::SetLastTimePacket(int lastTime)
-{
-	_lastTimePacket = lastTime;
-}
-
 string Scheduler::ArrangePacketMsg(Packet pkt, int time)
 {
 	string resultMsg = std::to_string(time) + ": " + std::to_string(pkt.packet_GetID());
@@ -181,13 +177,12 @@ void Scheduler::WriteToOutput(string pktMsg)
 	outputWriter.close();
 }
 
-void Scheduler::RR_handleFlow(string key)
+void Scheduler::RR_handleFlow(string key, Scheduler* sch)
 {
 	Packet pkt;
 	string msg;
 	int currTime, packetLen;
 	int flowWeight = _schedulerHashMap[key].flow_GetWeight();
-	//int numOfSends = GetLcm() / flowWeight;
 	int flowDynamicWeight = flowWeight;
 	Queue q = _schedulerHashMap[key].flow_GetQueue();
 
@@ -202,11 +197,11 @@ void Scheduler::RR_handleFlow(string key)
 		SetSchTime(currTime + packetLen);
 		flowDynamicWeight--;
 		SetCurrNumOfPkts(Get_CurrNumOfPkts() - 1);
-		ReadUntilTimeChange();
+		RunAgain(sch);
 	}
 }
 
-void Scheduler::DRR_handleFlow(string key)
+void Scheduler::DRR_handleFlow(string key, Scheduler* sch)
 {
 	Packet pkt;
 	string msg;
@@ -216,7 +211,7 @@ void Scheduler::DRR_handleFlow(string key)
 	int flowCredit = _schedulerHashMap[key].flow_GetCredit();
 	Queue q = _schedulerHashMap[key].flow_GetQueue();
 
-	while (!q.empty() && (flowCredit > packetLen))
+	while (!q.empty() && (flowCredit >= packetLen))
 	{
 		pkt = q.front();
 		packetLen = pkt.packet_GetLength();
@@ -227,7 +222,7 @@ void Scheduler::DRR_handleFlow(string key)
 		q.pop();
 		SetSchTime(currTime + packetLen);
 		SetCurrNumOfPkts(Get_CurrNumOfPkts() - 1);
-		ReadUntilTimeChange();
+		RunAgain(sch);
 	}
 
 	if (q.empty())
@@ -236,11 +231,11 @@ void Scheduler::DRR_handleFlow(string key)
 	}
 	else
 	{
-		_schedulerHashMap[key].flow_IncCredit(flowCredit);
+		_schedulerHashMap[key].flow_IncCredit(_schedulerHashMap[key].flow_GetCredit());
 	}
 }
 
-void Scheduler::ScheduleCurrPakts()
+void Scheduler::ScheduleCurrPakts(Scheduler* sch)
 {
 	std::list<string>::iterator it;
 	list<string> RR_Flows_list = GetFlowsList();
@@ -253,21 +248,26 @@ void Scheduler::ScheduleCurrPakts()
 
 			if (_SchedulerType.compare("RR"))
 			{
-				RR_handleFlow(*it);
+				RR_handleFlow(*it, sch);
 			}
 			else
 			{
-				DRR_handleFlow(*it);
+				DRR_handleFlow(*it, sch);
 			}
 
 			if (prevNumOfPackets > Get_CurrNumOfPkts()) //Case SCH time has chenged (some packets were sent)
 			{
-				ReadUntilTimeChange();
-				if (IsStartOver)
+				if (IsStartOver())
 				{
 					it = RR_Flows_list.begin(); //Start iterating from the beginning
 				}
 			}
 		}
 	}
+}
+
+void Scheduler::RunAgain(Scheduler * sch)
+{
+	sch->AddLastPacket();
+	ReadUntilTimeChange(sch);
 }

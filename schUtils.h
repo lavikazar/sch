@@ -6,6 +6,7 @@
 ***********************************/
 #include "Generals.h"
 #include "Packet.h"
+#include "Scheduler.h"
 using namespace std;
 
 //Splits string by a given delimeter
@@ -19,4 +20,11 @@ Packet LineToPacket(string line);
 
 //Calculate the lacm of two numbers
 void ComputeLcmWeight(int* lcm, int n1, int n2);
+
+//Reading until a new time is being read
+void ReadUntilTimeChange(Scheduler* sch);
+
+//Runs the routine of the scheduler
+void Run(Scheduler* sch);
+
 #endif

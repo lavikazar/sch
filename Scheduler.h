@@ -82,9 +82,6 @@ public:
 	//Sets the last time of the last packet
 	void SetLastTimePacket(int lastTime);
 
-	//Sends the right packets according to current call
-	void Scheduler::ScheduleCurrPakts();
-
 	//Writes the report of the cuurent sent packet
 	void Scheduler::WriteToOutput(string pktMsg);
 
@@ -92,10 +89,16 @@ public:
 	string Scheduler::ArrangePacketMsg(Packet pkt, int time);
 
 	//Performs RR (actually WRR) handling for a certain flow
-	void Scheduler::RR_handleFlow(string key);
+	void Scheduler::RR_handleFlow(string key, Scheduler* sch);
 	
 	//Performs DRR handling for a certain flow
-	void Scheduler::DRR_handleFlow(string key);
+	void Scheduler::DRR_handleFlow(string key, Scheduler* sch);
+
+	//Sends the right packets according to current call
+	void Scheduler::ScheduleCurrPakts(Scheduler* sch);
+
+	//Continues adding last packet and reading further lines
+	void Scheduler::RunAgain(Scheduler* sch);
 };
 
 #endif
