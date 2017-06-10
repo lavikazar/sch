@@ -27,7 +27,7 @@ class Scheduler
 private:
 	int						_quantum;
 	int						_defaultWeight;
-	int						_lastTimePacket;
+	int						_lastPacketTime;
 	int						_currNumOfPkts;
 	long int				_schTime;
 	bool					_startOver;
@@ -36,7 +36,7 @@ private:
 	string					_outputFile;
 	Packet					_lastPacket;
 	map<string, Flow>		_schedulerHashMap;
-	list<string>			_flowsList;
+	vector<string>			_flowsList;
 
 	/* Public Class functions & vars */
 public:
@@ -52,19 +52,20 @@ public:
 	int GetQuantum();
 	int GetDefaultWeight();
 	string GetSchedulerType();
-	int GetLastTimePacket();
+	int GetLastPacketTime();
 	int GetMapSize();
 	int Get_CurrNumOfPkts();
 	long int GetSchTime();
 	bool IsFlowInMap(string key);
 	bool IsStartOver();
 	Packet GetLastPacket();
-	list<string> GetFlowsList();
+	vector<string> GetFlowsList();
 
 	//Setters
 	void SetSchTime(int time);
 	void SetCurrNumOfPkts(int value);
 	void SetStartOver(bool value);
+	void SetItemInFlowsList(string element);
 
 	//**Utils functions**//
 
@@ -89,16 +90,22 @@ public:
 	string Scheduler::ArrangePacketMsg(Packet pkt, int time);
 
 	//Performs RR (actually WRR) handling for a certain flow
-	void Scheduler::RR_handleFlow(string key, Scheduler* sch);
+	void Scheduler::RR_handleFlow(string key);
 	
 	//Performs DRR handling for a certain flow
-	void Scheduler::DRR_handleFlow(string key, Scheduler* sch);
+	void Scheduler::DRR_handleFlow(string key);
 
 	//Sends the right packets according to current call
-	void Scheduler::ScheduleCurrPakts(Scheduler* sch);
+	void Scheduler::ScheduleCurrPakts();
 
 	//Continues adding last packet and reading further lines
-	void Scheduler::RunAgain(Scheduler* sch);
+	void Scheduler::RunAgain();
+
+	//
+	void ReadUntilTimeChange();
+
+	//
+	void Run();
 };
 
 #endif

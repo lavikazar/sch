@@ -33,7 +33,6 @@ private:
 	int		_weight;
 	int		_credit;
 	int		_creditUsed;
-	int		_priority;
 	Queue	_Packets;
 
 	/* Public Class functions */
@@ -47,14 +46,18 @@ public:
 	int flow_GetWeight();
 	int flow_GetCredit();
 	int flow_GetCreditUsed();
-	int Flow::flow_GetPriority();
 	Queue flow_GetQueue();
-	//Given a packet, insert it to the flow
-	void flow_InsertToQueue(Packet pkt);
 
 	//Setters
 	void Flow::flow_IncCredit(int credit);
 	void Flow::flow_SetCredit(int credit);
+
+	//Generals
+	//Given a packet, insert it to the flow
+	void flow_InsertToQueue(Packet pkt);
+
+	//Pop from queue
+	void flow_PopFromQueue();
 };
 
 #endif

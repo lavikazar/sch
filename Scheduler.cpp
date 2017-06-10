@@ -7,8 +7,9 @@
 /***********************************
 *             Globals	           *
 ***********************************/
-
-ofstream outputWriter;				//The writer for the output file
+int LastIndexFlowList = 0;
+ifstream inputReader;		//The reader for the input file
+ofstream outputWriter;		//The writer for the output file
 
 
 /***********************************
@@ -27,9 +28,10 @@ Scheduler::Scheduler(int quantom, int defaultWeight, int lastTimePacket,
 	_SchedulerType = SchedulerType;
 	_inputFile = inputFile;
 	_outputFile = outputFile;
-	_lastTimePacket = lastTimePacket;
+	_lastPacketTime = lastTimePacket;
 	_schTime = 0;
 	_currNumOfPkts = 0;
+	_startOver = false;
 }
 
 //Getters
@@ -53,9 +55,9 @@ string Scheduler::GetSchedulerType()
 {
 	return _SchedulerType;
 }
-int Scheduler::GetLastTimePacket()
+int Scheduler::GetLastPacketTime()
 {
-	return _lastTimePacket;
+	return _lastPacketTime;
 }
 int Scheduler::GetMapSize()
 {
@@ -73,7 +75,7 @@ Packet Scheduler::GetLastPacket()
 {
 	return _lastPacket;
 }
-list<string> Scheduler::GetFlowsList()
+vector<string> Scheduler::GetFlowsList()
 {
 	return _flowsList;
 }
@@ -94,6 +96,11 @@ void Scheduler::SetStartOver(bool value)
 	_startOver = value;
 }
 
+void Scheduler::SetItemInFlowsList(string element)
+{
+	_flowsList.push_back(element);
+}
+
 void Scheduler::SetLastPacket(Packet pkt)
 {
 	_lastPacket = pkt;
@@ -101,7 +108,7 @@ void Scheduler::SetLastPacket(Packet pkt)
 
 void Scheduler::SetLastTimePacket(int lastTime)
 {
-	_lastTimePacket = lastTime;
+	_lastPacketTime = lastTime;
 }
 
 //General
@@ -128,33 +135,29 @@ void Scheduler::AddPacketToMap(string key, Packet pkt)
 	}
  
 	int pktTime = pkt.packet_GetTime();
-	int credit = GetQuantum() * pkt.packet_GetWeight();
 
 	if (pktTime > GetSchTime())
 	{
 		SetSchTime(pktTime);
-		SetStartOver(true);
 	}
 
 	if (!IsFlowInMap(key))
 	{
-		//ComputeLcmWeight(&lcm, pkt.packet_GetWeight(), GetLcm());	//Compute the new lcmWeight
-		Flow newFlow(pkt.packet_GetWeight(), credit, 0);
-		list<string> RR_Flows_list = GetFlowsList();
-		RR_Flows_list.push_back(key);								//Append to RR ordered list
-		_schedulerHashMap[key] = newFlow;							//Add to hash map
+		Flow newFlow(pkt.packet_GetWeight(), 0, 0);
+		SetItemInFlowsList(key);								//Append to RR ordered list
+		_schedulerHashMap[key] = newFlow;						//Add to hash map
 		_schedulerHashMap[key].flow_InsertToQueue(pkt);
+		SetCurrNumOfPkts(Get_CurrNumOfPkts() + 1);
 		return;
 	}
 
-	_schedulerHashMap[key].flow_IncCredit(credit);
 	_schedulerHashMap[key].flow_InsertToQueue(pkt);
 	SetCurrNumOfPkts(Get_CurrNumOfPkts() + 1);
 }
 
 void Scheduler::AddLastPacket()
 {
-	if (GetLastTimePacket() == -1)
+	if (GetLastPacketTime() == -1)
 	{
 		return;
 	}
@@ -177,7 +180,71 @@ void Scheduler::WriteToOutput(string pktMsg)
 	outputWriter.close();
 }
 
-void Scheduler::RR_handleFlow(string key, Scheduler* sch)
+void Scheduler::ReadUntilTimeChange()
+{
+	//Declarations
+	string currLine, packetKey;
+
+	//Program flow
+	while (!inputReader.eof()) {
+		while (getline(inputReader, currLine))
+		{
+			Packet currlinePacket = LineToPacket(currLine);
+			if (currlinePacket.packet_GetWeight() == -1)
+			{
+				currlinePacket.packet_SetWeight(GetDefaultWeight());
+			}
+			packetKey = GeneratePacketKey(currlinePacket);
+
+			//Check if the time of the new packet is different from the previous one
+			if (GetLastPacketTime() != currlinePacket.packet_GetTime())
+			{
+				//Packet with new time has arrived
+				if (GetLastPacketTime() != -1)
+				{
+					SetLastTimePacket(currlinePacket.packet_GetTime());
+					SetLastPacket(currlinePacket);
+					if (GetLastPacketTime() > GetSchTime())
+					{
+						return;
+					}
+				}
+				else
+				{
+					SetLastTimePacket(currlinePacket.packet_GetTime());
+				}
+			}
+
+			AddPacketToMap(packetKey, currlinePacket);
+		}
+	}
+}
+
+void Scheduler::Run()
+{
+	inputReader.open(GetInputFile());	//Opening the input file for reading
+
+	while (!inputReader.eof())
+	{
+		AddLastPacket();				//Add the last packet that was already read in the last time.
+		ReadUntilTimeChange();			//Read lines from the input file until a new time has been found
+		ScheduleCurrPakts();
+	}
+}
+
+void Scheduler::RunAgain()
+{
+	if (GetLastPacketTime() > GetSchTime()) 
+	{
+		return; 
+	}
+	if (!inputReader.eof()) {
+		AddLastPacket();
+		ReadUntilTimeChange();
+	}
+}
+
+void Scheduler::RR_handleFlow(string key)
 {
 	Packet pkt;
 	string msg;
@@ -189,40 +256,70 @@ void Scheduler::RR_handleFlow(string key, Scheduler* sch)
 	while (!q.empty() && (flowDynamicWeight > 0))
 	{
 		pkt = q.front();
+		if (pkt.packet_GetTime() > GetSchTime())
+		{
+			return;
+		}
+
 		packetLen = pkt.packet_GetLength();
 		currTime = GetSchTime();
 		msg = ArrangePacketMsg(pkt, currTime);
 		WriteToOutput(msg);
-		q.pop();
+
+		_schedulerHashMap[key].flow_PopFromQueue();
+		q = _schedulerHashMap[key].flow_GetQueue();
+
 		SetSchTime(currTime + packetLen);
 		flowDynamicWeight--;
 		SetCurrNumOfPkts(Get_CurrNumOfPkts() - 1);
-		RunAgain(sch);
+		RunAgain();
+		q = _schedulerHashMap[key].flow_GetQueue();
 	}
 }
 
-void Scheduler::DRR_handleFlow(string key, Scheduler* sch)
+void Scheduler::DRR_handleFlow(string key)
 {
 	Packet pkt;
 	string msg;
-	int currTime;
-	int	packetLen = pkt.packet_GetLength();
+	int currTime, packetLen;
 	int flowWeight = _schedulerHashMap[key].flow_GetWeight();
 	int flowCredit = _schedulerHashMap[key].flow_GetCredit();
-	Queue q = _schedulerHashMap[key].flow_GetQueue();
 
-	while (!q.empty() && (flowCredit >= packetLen))
+	Queue q = _schedulerHashMap[key].flow_GetQueue();
+	if (q.empty())
+	{
+		return;
+	}
+
+	pkt = q.front();
+	packetLen = pkt.packet_GetLength();
+
+	while (!q.empty())
 	{
 		pkt = q.front();
 		packetLen = pkt.packet_GetLength();
+		if (pkt.packet_GetTime() > GetSchTime())
+		{
+			return;
+		}
+		if (flowCredit < packetLen)
+		{
+			break;
+		}
+		
 		currTime = GetSchTime();
 		msg = ArrangePacketMsg(pkt, currTime);
 		WriteToOutput(msg);
+
+		_schedulerHashMap[key].flow_PopFromQueue();
+		q = _schedulerHashMap[key].flow_GetQueue();
+
 		flowCredit -= packetLen;
-		q.pop();
+		_schedulerHashMap[key].flow_SetCredit(flowCredit);
 		SetSchTime(currTime + packetLen);
 		SetCurrNumOfPkts(Get_CurrNumOfPkts() - 1);
-		RunAgain(sch);
+		RunAgain();
+		q = _schedulerHashMap[key].flow_GetQueue();
 	}
 
 	if (q.empty())
@@ -231,43 +328,31 @@ void Scheduler::DRR_handleFlow(string key, Scheduler* sch)
 	}
 	else
 	{
-		_schedulerHashMap[key].flow_IncCredit(_schedulerHashMap[key].flow_GetCredit());
+		int tmpCredit = (_schedulerHashMap[key].flow_GetWeight()) * (GetQuantum());
+		_schedulerHashMap[key].flow_IncCredit(tmpCredit);
 	}
 }
 
-void Scheduler::ScheduleCurrPakts(Scheduler* sch)
+void Scheduler::ScheduleCurrPakts()
 {
-	std::list<string>::iterator it;
-	list<string> RR_Flows_list = GetFlowsList();
+	vector<string> RR_Flows_list = GetFlowsList();
 
 	while (Get_CurrNumOfPkts() > 0)
 	{
-		for (it = RR_Flows_list.begin(); it != RR_Flows_list.end(); ++it)
+		LastIndexFlowList = 0;
+		while (LastIndexFlowList < (RR_Flows_list.size()))
 		{
-			int prevNumOfPackets = Get_CurrNumOfPkts();
-
-			if (_SchedulerType.compare("RR"))
+			if (GetSchedulerType().compare("RR") == 0)
 			{
-				RR_handleFlow(*it, sch);
+				RR_handleFlow(RR_Flows_list[LastIndexFlowList]);
 			}
 			else
 			{
-				DRR_handleFlow(*it, sch);
+				DRR_handleFlow(RR_Flows_list[LastIndexFlowList]);
 			}
 
-			if (prevNumOfPackets > Get_CurrNumOfPkts()) //Case SCH time has chenged (some packets were sent)
-			{
-				if (IsStartOver())
-				{
-					it = RR_Flows_list.begin(); //Start iterating from the beginning
-				}
-			}
+			RR_Flows_list = GetFlowsList();
+			LastIndexFlowList++;
 		}
 	}
-}
-
-void Scheduler::RunAgain(Scheduler * sch)
-{
-	sch->AddLastPacket();
-	ReadUntilTimeChange(sch);
 }

@@ -33,17 +33,9 @@ int Flow::flow_GetCreditUsed()
 {
 	return _creditUsed;
 }
-int Flow::flow_GetPriority()
-{
-	return _priority;
-}
 Queue Flow::flow_GetQueue()
 {
 	return _Packets;
-}
-void Flow::flow_InsertToQueue(Packet pkt)
-{
-	_Packets.push(pkt);
 }
 
 //Setters
@@ -55,4 +47,15 @@ void Flow::flow_IncCredit(int credit)
 void Flow::flow_SetCredit(int credit)
 {
 	_credit = credit;
+}
+
+//Generals
+void Flow::flow_InsertToQueue(Packet pkt)
+{
+	_Packets.push(pkt);
+}
+
+void Flow::flow_PopFromQueue()
+{
+	_Packets.pop();
 }

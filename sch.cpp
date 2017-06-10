@@ -30,13 +30,8 @@ int main(int argc, char* argv[])
 	}
 
 	string inputFile = argv[2], outputFile = argv[3];
-	string schedulerType = "RR";
+	string schedulerType = argv[1];
 	int defaultWeight = stoi(argv[4]), quantum = stoi(argv[5]);
-	
-	if (argv[1] == "DRR")
-	{
-		schedulerType = "DRR";
-	}
 
 	ofstream f = ofstream(outputFile, ios::trunc);	//Truncate the output file to start fresh new file
 	f.close();										//Closes the output file
@@ -45,7 +40,7 @@ int main(int argc, char* argv[])
 	sch = new Scheduler(quantum, defaultWeight, -1, schedulerType, inputFile, outputFile);
 	
 	//Run routine
-	Run(sch);
+	sch->Run();
 	
 	return 0;
 }
