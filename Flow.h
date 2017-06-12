@@ -32,7 +32,6 @@ class Flow
 private:
 	int		_weight;
 	int		_credit;
-	int		_creditUsed;
 	Queue	_Packets;
 
 	/* Public Class functions */
@@ -40,12 +39,11 @@ public:
 
 	//Constructor
 	Flow();
-	Flow(int weight, int credit, int creditUsed);
+	Flow(int weight, int credit);
 
 	//Getters
 	int flow_GetWeight();
 	int flow_GetCredit();
-	int flow_GetCreditUsed();
 	Queue flow_GetQueue();
 
 	//Setters

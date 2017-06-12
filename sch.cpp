@@ -33,8 +33,8 @@ int main(int argc, char* argv[])
 	string schedulerType = argv[1];
 	int defaultWeight = stoi(argv[4]), quantum = stoi(argv[5]);
 
-	ofstream f = ofstream(outputFile, ios::trunc);	//Truncate the output file to start fresh new file
-	f.close();										//Closes the output file
+	ofstream f = ofstream(outputFile, ios::trunc);			//Truncate the output file to start fresh new file
+	f.close();												//Closes the output file
 
 	//Initialize the scheduler
 	sch = new Scheduler(quantum, defaultWeight, -1, schedulerType, inputFile, outputFile);

@@ -13,11 +13,10 @@ Flow::Flow()
 {
 }
 
-Flow::Flow(int weight, int credit, int creditUsed)
+Flow::Flow(int weight, int credit)
 {
 	_weight = weight;
 	_credit = credit;
-	_creditUsed = creditUsed;
 }
 
 //Getters
@@ -28,10 +27,6 @@ int Flow::flow_GetWeight()
 int Flow::flow_GetCredit()
 {
 	return _credit;
-}
-int Flow::flow_GetCreditUsed()
-{
-	return _creditUsed;
 }
 Queue Flow::flow_GetQueue()
 {

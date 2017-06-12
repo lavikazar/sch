@@ -4,22 +4,23 @@
 /***********************************
 *            Includes              *
 ***********************************/
+
 #include "Flow.h"
 using namespace std;
 
-/************************************************************************
-* Class Scheduler declaration:											*
-*																		*
-* The class defines a packet with the following members:				*
-* 1) _quantum : The quantum number for all the packets (size in bytes).	*
-* 2) _defaultWeight: The default weight of a flow with packets.			*
-* 3) _SchedulerType: The type of scheduler (false for RR, true for DRR).		*
-* 4) _inputFile: Holds the path of the input file.						*
-* 5) _outputFile: Holds the path of the output file.					*
-* 6) _schedulerHashMap: //Holds the keys and the flows					*
-*																		*
-* Description:															*
-************************************************************************/
+/*************************************************************************
+* Class Scheduler declaration:											 *
+*																		 *
+* The class defines a packet with the following members:				 *
+* 1) _quantum : The quantum number for all the packets (size in bytes).	 *
+* 2) _defaultWeight: The default weight of a flow with packets.			 *
+* 3) _SchedulerType: The type of scheduler (false for RR, true for DRR). *
+* 4) _inputFile: Holds the path of the input file.						 *
+* 5) _outputFile: Holds the path of the output file.					 *
+* 6) _schedulerHashMap: //Holds the keys and the flows					 *
+*																		 *
+* Description:															 *
+*************************************************************************/
 
 class Scheduler
 {
@@ -30,7 +31,6 @@ private:
 	int						_lastPacketTime;
 	int						_currNumOfPkts;
 	long int				_schTime;
-	bool					_startOver;
 	string					_SchedulerType;
 	string					_inputFile;
 	string					_outputFile;
@@ -57,17 +57,15 @@ public:
 	int Get_CurrNumOfPkts();
 	long int GetSchTime();
 	bool IsFlowInMap(string key);
-	bool IsStartOver();
 	Packet GetLastPacket();
 	vector<string> GetFlowsList();
 
 	//Setters
 	void SetSchTime(int time);
 	void SetCurrNumOfPkts(int value);
-	void SetStartOver(bool value);
 	void SetItemInFlowsList(string element);
 
-	//**Utils functions**//
+	/****** Utils functions ******/
 
 	//Adds the given packet to the queue in the key place in the map
 	//In case the key doesn't exist, create one and insert the packet
