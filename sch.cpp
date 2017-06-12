@@ -1,21 +1,13 @@
 /***********************************
 *            Includes              *
 ***********************************/
-
-#include "schUtils.h"
 #include "Scheduler.h"
 using namespace std;
 
 /***********************************
 *            Globals			   *
 ***********************************/
-
-Scheduler* sch;				//Holds the scheduler
-
-/***********************************
-*          Main program     	   *
-***********************************/
-
+Scheduler* sch;												//Holds the scheduler
 
 /***********************************
 *            Main Program          *

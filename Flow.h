@@ -23,7 +23,7 @@ typedef std::queue<Packet> Queue;
 * 4) _Packets: The queue that holds all the packets of the flow		*
 *																	*
 * Description:														*
-* The FlowQueue suppose to serve the hash map of the scheduler.		*
+* The Flow suppose to serve the hash map of the scheduler.			*
 ********************************************************************/
 
 class Flow
@@ -38,24 +38,21 @@ private:
 public:
 
 	//Constructor
-	Flow();
-	Flow(int weight, int credit);
+	Flow();									//Empty constructor
+	Flow(int weight, int credit);			//Constructor of a new flow. Initialize the weight and the credit by a given arguments.
 
 	//Getters
-	int flow_GetWeight();
-	int flow_GetCredit();
-	Queue flow_GetQueue();
+	int flow_GetWeight();					//Gets the weight of the flow.
+	int flow_GetCredit();					//Gets the credit that the flow has.
+	Queue flow_GetQueue();					//Gets the queue of the flow.
 
 	//Setters
-	void Flow::flow_IncCredit(int credit);
-	void Flow::flow_SetCredit(int credit);
+	void Flow::flow_IncCredit(int credit);	//Increments the credit of the flow by a given 'credit'.
+	void Flow::flow_SetCredit(int credit);	//Sets the credit of the flow to be 'credit'.
 
 	//Generals
-	//Given a packet, insert it to the flow
-	void flow_InsertToQueue(Packet pkt);
-
-	//Pop from queue
-	void flow_PopFromQueue();
+	void flow_InsertToQueue(Packet pkt);	//Inserts to the queue of the flow the given packet.
+	void flow_PopFromQueue();				//Pops from the queue a single packet.
 };
 
 #endif

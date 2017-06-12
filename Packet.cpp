@@ -3,16 +3,14 @@
 ***********************************/
 #include "Packet.h"
 
-
 /***********************************
-*             Functions	           *
+*   Packet Class Implementation	   *
 ***********************************/
 
-//Constructor
+//*****Constructor*****//
 Packet::Packet()
 {
 }
-
 Packet::Packet(long int ID, long int time, string sourceAddr, string sourcePort, string destAddr, string destPort, int length, int weight)
 {
 	_id = ID;
@@ -25,7 +23,7 @@ Packet::Packet(long int ID, long int time, string sourceAddr, string sourcePort,
 	_weight = weight;
 }
 
-//Getters
+//*****Getters*****//
 int Packet::packet_GetID()
 {
 	return _id;
@@ -59,7 +57,7 @@ string Packet::packet_GetDestPort()
 	return _destPort;
 }
 
-//Setters
+//*****Setters*****//
 void Packet::packet_SetWeight(int weight)
 {
 	_weight = weight;
